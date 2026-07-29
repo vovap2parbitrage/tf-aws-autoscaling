@@ -118,3 +118,44 @@ resource "aws_launch_template" "nginx_lt" {
     NGINX_CONF = file("${path.module / templates / nginx.conf}")
   }))
 }
+
+resource "aws_lb_target_group" "nginx_tg" {
+  name     = "nginx-target-group"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main_vpc.id
+}
+
+resource "aws_lb" "web_alb" {
+  name = "nginx-web-alb"
+  internal = false
+  load_balancer_type = "application"
+  security_groups = [aws_security_group.alb_sg.id]
+  subnets = [aws_subnet.public_subnet_a.id, aws_subnet.public_subnet_b.id]
+}
+
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.web_alb.arn
+  port = "80"
+  protocol = "HTTP"
+
+  default_action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.nginx_tg.arn
+  }
+}
+
+resource "aws_autoscaling_group" "nginx_asg" {
+  vpc_zone_identifier = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
+
+  desired_capacity = 2
+  max_size = 4
+  min_size = 2
+
+  target_group_arns = [aws_lb_target_group.nginx_tg.arn]
+
+  launch_template {
+    id = aws_launch_template.nginx_lt.id
+    version = "$Latest"
+  }
+}
