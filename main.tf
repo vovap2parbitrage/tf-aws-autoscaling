@@ -67,6 +67,16 @@ resource "aws_route_table" "public_rt" {
   }
 }
 
+resource "aws_route_table_association" "pub_a_assoc" {
+  subnet_id = aws_subnet.public_subnet_a.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+resource "aws_route_table_association" "pub_b_assoc" {
+  subnet_id = aws_subnet.public_subnet_b.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
 resource "aws_security_group" "alb_sg" {
   name   = "alb-security-group"
   vpc_id = aws_vpc.main_vpc.id
