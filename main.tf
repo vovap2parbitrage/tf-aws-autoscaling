@@ -46,6 +46,27 @@ resource "aws_subnet" "private_subnet_b" {
   }
 }
 
+resource "aws_internet_gateway" "main_gw" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  tags = {
+    Name = "MainIGW"
+  }
+}
+
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main_gw.id
+  }
+
+  tags = {
+    Name = "MainIGW"
+  }
+}
+
 resource "aws_security_group" "alb_sg" {
   name   = "alb-security-group"
   vpc_id = aws_vpc.main_vpc.id
@@ -115,7 +136,7 @@ resource "aws_launch_template" "nginx_lt" {
   }
 
   user_data = base64encode(templatefile("${path.module}/scripts/userdata.sh", {
-    NGINX_CONF = file("${path.module / templates / nginx.conf}")
+    NGINX_CONF = file("${path.module/templates/nginx.conf}")
   }))
 }
 
