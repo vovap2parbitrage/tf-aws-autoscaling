@@ -68,12 +68,12 @@ resource "aws_route_table" "public_rt" {
 }
 
 resource "aws_route_table_association" "pub_a_assoc" {
-  subnet_id = aws_subnet.public_subnet_a.id
+  subnet_id      = aws_subnet.public_subnet_a.id
   route_table_id = aws_route_table.public_rt.id
 }
 
 resource "aws_route_table_association" "pub_b_assoc" {
-  subnet_id = aws_subnet.public_subnet_b.id
+  subnet_id      = aws_subnet.public_subnet_b.id
   route_table_id = aws_route_table.public_rt.id
 }
 
@@ -193,4 +193,16 @@ resource "aws_autoscaling_group" "nginx_asg" {
 
 resource "aws_route53_zone" "main_zone" {
   name = "hega.pp.ua"
+}
+
+resource "aws_route53_record" "alb_alias" {
+  zone_id = aws_route53_zone.main_zone.zone_id
+  name    = "hega.pp.ua"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.web_alb.dns_name
+    zone_id                = aws_lb.web_alb.zone_id
+    evaluate_target_health = true
+  }
 }
