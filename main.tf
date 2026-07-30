@@ -127,20 +127,20 @@ resource "aws_lb_target_group" "nginx_tg" {
 }
 
 resource "aws_lb" "web_alb" {
-  name = "nginx-web-alb"
-  internal = false
+  name               = "nginx-web-alb"
+  internal           = false
   load_balancer_type = "application"
-  security_groups = [aws_security_group.alb_sg.id]
-  subnets = [aws_subnet.public_subnet_a.id, aws_subnet.public_subnet_b.id]
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = [aws_subnet.public_subnet_a.id, aws_subnet.public_subnet_b.id]
 }
 
 resource "aws_lb_listener" "front_end" {
   load_balancer_arn = aws_lb.web_alb.arn
-  port = "80"
-  protocol = "HTTP"
+  port              = "80"
+  protocol          = "HTTP"
 
   default_action {
-    type = "forward"
+    type             = "forward"
     target_group_arn = aws_lb_target_group.nginx_tg.arn
   }
 }
@@ -149,13 +149,17 @@ resource "aws_autoscaling_group" "nginx_asg" {
   vpc_zone_identifier = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
 
   desired_capacity = 2
-  max_size = 4
-  min_size = 2
+  max_size         = 4
+  min_size         = 2
 
   target_group_arns = [aws_lb_target_group.nginx_tg.arn]
 
   launch_template {
-    id = aws_launch_template.nginx_lt.id
+    id      = aws_launch_template.nginx_lt.id
     version = "$Latest"
   }
+}
+
+resource "aws_route53_zone" "main_zone" {
+  name = "hega.pp.ua"
 }
