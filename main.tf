@@ -63,7 +63,7 @@ resource "aws_route_table" "public_rt" {
   }
 
   tags = {
-    Name = "MainIGW"
+    Name = "PublicRouteTable"
   }
 }
 
@@ -75,6 +75,48 @@ resource "aws_route_table_association" "pub_a_assoc" {
 resource "aws_route_table_association" "pub_b_assoc" {
   subnet_id      = aws_subnet.public_subnet_b.id
   route_table_id = aws_route_table.public_rt.id
+}
+
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+
+  tags = {
+    Name = "NatEIP"
+  }
+}
+
+resource "aws_nat_gateway" "main_nat" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id = aws_subnet.public_subnet_a.id
+
+  tags = {
+    Name = "NatGateway"
+  }
+
+  depends_on = [aws_internet_gateway.main_gw]
+}
+
+resource "aws_route_table" "private_rt" {
+  vpc_id = aws_vpc.main_vpc.id
+  
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.main_nat.id
+  }
+
+  tags = {
+    Name = "PrivateRouteTable"
+  }
+}
+
+resource "aws_route_table_association" "priv_a_assoc" {
+  subnet_id = aws_subnet.private_subnet_a.id
+  route_table_id = aws_route_table.private_rt.id
+}
+
+resource "aws_route_table_association" "priv_b_assoc" {
+  subnet_id = aws_subnet.private_subnet_b.id
+  route_table_id = aws_route_table.private_rt.id
 }
 
 resource "aws_security_group" "alb_sg" {
@@ -125,7 +167,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-*"]
   }
 }
 
@@ -146,7 +188,7 @@ resource "aws_launch_template" "nginx_lt" {
   }
 
   user_data = base64encode(templatefile("${path.module}/scripts/userdata.sh", {
-    NGINX_CONF = file("${path.module/templates/nginx.conf}")
+    NGINX_CONF = file("${path.module}/templates/nginx.conf")
   }))
 }
 

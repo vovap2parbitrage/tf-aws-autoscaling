@@ -1,7 +1,7 @@
 variable "aws_region" {
   type        = string
   description = "The region where the instance running"
-  default     = "eu_north_1"
+  default     = "eu-north-1"
 }
 
 variable "instance_type" {
